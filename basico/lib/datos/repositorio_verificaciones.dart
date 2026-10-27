@@ -30,11 +30,11 @@ class RepositorioVerificaciones {
   }
 
 
+    /// Estado del conjunto de modelos del proyecto.
   String get estadoGeneral {
     if (_verificaciones.isEmpty) return 'Sin verificaciones';
-    final promedio = promedioGeneral;
     if (contarPorEstado(EstadoVerificacion.rechazado) > 0) {
-      return 'Requiere correciones';
+      return 'Requiere correcciones';
     }
     if (contarPorEstado(EstadoVerificacion.conObservaciones) > 0) {
       return 'Aprobado con observaciones';
