@@ -17,6 +17,9 @@ class PantallaInicio extends StatefulWidget {
 }
 
 class _PantallaInicioState extends State<PantallaInicio> {
+  /// Mejora propia: estado por el que se filtra la lista (null = todos).
+  EstadoVerificacion? _filtro;
+
   Future<void> _abrirFormulario() async {
     // Espera el resultado que devuelve Navigator.pop del formulario.
     final nueva = await Navigator.push<Verificacion>(
@@ -35,8 +38,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            PantallaReporte(repositorio: widget.repositorio),
+        builder: (_) => PantallaReporte(repositorio: widget.repositorio),
       ),
     );
   }
@@ -64,9 +66,41 @@ class _PantallaInicioState extends State<PantallaInicio> {
     }
   }
 
+  /// Chips para filtrar la lista por estado.
+  Widget _barraFiltros() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          ChoiceChip(
+            label: const Text('Todos'),
+            selected: _filtro == null,
+            onSelected: (_) => setState(() => _filtro = null),
+          ),
+          for (final e in EstadoVerificacion.values) ...[
+            const SizedBox(width: 8),
+            ChoiceChip(
+              avatar: Icon(iconoEstado(e), color: colorEstado(e), size: 18),
+              label: Text(
+                '${e.texto} (${widget.repositorio.contarPorEstado(e)})',
+              ),
+              selected: _filtro == e,
+              onSelected: (_) => setState(() => _filtro = e),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final verificaciones = widget.repositorio.todas;
+    final todas = widget.repositorio.todas;
+    // Lista que se muestra según el filtro elegido.
+    final visibles = _filtro == null
+        ? todas
+        : todas.where((v) => v.estado == _filtro).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Verificación de modelos')),
@@ -78,31 +112,35 @@ class _PantallaInicioState extends State<PantallaInicio> {
               children: [
                 Expanded(
                   child: Text(
-                    'Verificaciones registradas: '
-                    '${verificaciones.length}',
+                    'Verificaciones registradas: ${todas.length}',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 ElevatedButton.icon(
                   // Con null el botón queda deshabilitado.
-                  onPressed:
-                      verificaciones.isEmpty ? null : _abrirReporte,
+                  onPressed: todas.isEmpty ? null : _abrirReporte,
                   icon: const Icon(Icons.assessment),
                   label: const Text('Generar reporte'),
                 ),
               ],
             ),
           ),
+          _barraFiltros(),
+          const SizedBox(height: 8),
           Expanded(
-            child: verificaciones.isEmpty
-                ? const Center(
-                    child: Text('Aún no hay verificaciones.'),
+            child: visibles.isEmpty
+                ? Center(
+                    child: Text(
+                      todas.isEmpty
+                          ? 'Aún no hay verificaciones.'
+                          : 'No hay verificaciones con ese estado.',
+                    ),
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.only(bottom: 88),
-                    itemCount: verificaciones.length,
+                    itemCount: visibles.length,
                     itemBuilder: (context, i) {
-                      final v = verificaciones[i];
+                      final v = visibles[i];
                       return Card(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -123,7 +161,10 @@ class _PantallaInicioState extends State<PantallaInicio> {
                           trailing: IconButton(
                             tooltip: 'Eliminar',
                             icon: const Icon(Icons.delete_outline),
-                            onPressed: () => _confirmarEliminar(i),
+                            // Con el filtro activo, el índice de la lista
+                            // visible no es el del arreglo: se busca el real.
+                            onPressed: () =>
+                                _confirmarEliminar(todas.indexOf(v)),
                           ),
                         ),
                       );
