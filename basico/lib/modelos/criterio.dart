@@ -1,9 +1,4 @@
-class Criterio {
-  Criterio({
-    required this.codigo,
-    required this.descripcion,
-    this.cumple = false,
-  });
+
 
   final String codigo;
   final String descripcion;

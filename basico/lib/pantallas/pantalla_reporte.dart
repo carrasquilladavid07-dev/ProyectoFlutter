@@ -115,7 +115,7 @@ class _DetalleModelo extends StatelessWidget {
             const SizedBox(height: 6),
             LinearProgressIndicator(
               value: v.porcentaje / 100,
-              
+              color: color,
             ),
             if (v.pendientes.isNotEmpty) ...[
               const SizedBox(height: 8),
